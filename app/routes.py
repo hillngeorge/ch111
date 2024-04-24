@@ -1,18 +1,42 @@
-from flask import Flask   # from the flask module import the flask class
+from flask import (
+    Flask,
+    request,
+    render_template
+)
 
-app = Flask(__name__)   # create an instance of the flask class
+import requests
+app = Flask(__name__)
+BACKEND_URL = "http://127.0.0.1:5000/tasks"
 
-@app.get("/about")
-@app.get("/")        # flask decorator that maps view functions to routes
-def index():           # view function
-    me = {              # python dictionary
-        "first_name": "George",
-        "last_name": "Dick",
-        "hobbies": "Music",
-        "is_online": True
-    }
-    return me   #when you return a dict from a view function,  it becomes JSON
-#@app.post()
-#@app.patch()
-#@app.put()
-#@app.delete()
+@app.get("/")
+def index():
+    return render_template("index.html")
+
+@app.get('/about')
+def about():
+    return render_template("about.html")
+
+@app.get("/tasks")
+def task_list():
+    response = requests.get(BACKEND_URL)
+    if response.status_code == 200:
+        task_list = response.json().get("tasks")
+        return render_template("list.html", tasks=task_list)
+    return (
+        render_template("error.html", err=response.status_code),
+        response.status_code
+    )
+
+
+@app.get("/task/<int:pk>")
+def detail(pk):
+    url = "%s/%s" % (BACKEND_URL, pk)
+    response = requests.get(url)
+    if response.status_code == 200:
+        task = response.json().get("task")
+        return render_template("detail.html, task=task")
+    return (
+        render_template("error.html", err=response.status_code),
+        response.status_code
+    )
+    
